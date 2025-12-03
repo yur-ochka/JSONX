@@ -1,5 +1,3 @@
-// src/core/engine/transform.js - Updated with template matching
-
 import { createRuntimeContext } from "./runtimeContext.js";
 import { applyTemplate } from "./applyTemplate.js";
 

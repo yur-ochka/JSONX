@@ -1,5 +1,3 @@
-// src/core/expressions/evalExpr.js - Corrected implementation
-
 import { parseSelector } from "../selector/parseSelector.js";
 import { evalSelector } from "../selector/evalSelector.js";
 
@@ -22,7 +20,7 @@ export function evalExpr(ast, ctx, currentNode, root) {
           currentNode
         );
         const tokens = parseSelector(ast.value);
-        const result = evalSelector(currentNode, tokens); // FIXED: Use currentNode
+        const result = evalSelector(currentNode, tokens);
         console.log("🔍 Selector result:", result);
         return result;
       } catch (e) {

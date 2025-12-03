@@ -9,7 +9,7 @@ export async function evaluate(node, ctx, currentNode, root, templatesMap) {
   }
 
   if (typeof node === "string") {
-    if (node.startsWith("$.")) return safeSelect(node, currentNode, ctx); // FIXED: use currentNode
+    if (node.startsWith("$.")) return safeSelect(node, currentNode, ctx);
     return node;
   }
 

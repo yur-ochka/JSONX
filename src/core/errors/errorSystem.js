@@ -1,5 +1,3 @@
-// src/core/errors/errorSystem.js
-
 export class JSONXError extends Error {
   constructor(message, code, context = {}) {
     super(message);

@@ -1,4 +1,4 @@
-// src/core/expressions/builtins.js - Complete built-in functions
+// Complete built-in functions
 
 export const builtins = {
   // String functions
