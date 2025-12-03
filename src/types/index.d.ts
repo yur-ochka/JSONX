@@ -1,58 +1,63 @@
-// TypeScript declaration file for JSONX public API
+// types/index.d.ts
 
-declare module "jsonx" {
-  export interface TransformOptions {
-    mode?: "permissive" | "strict";
-    context?: Record<string, any>;
-    start?: string;
-  }
+export interface TransformOptions {
+  mode?: "permissive" | "strict";
+  context?: Record<string, any>;
+  start?: string;
+}
 
-  export interface TemplateSpec {
-    templates?: Array<{
-      name?: string;
-      match?: string;
-      output: any;
-    }>;
-    root?: any;
-  }
+export interface CompiledTemplate {
+  // Internal structure, but exported for TypeScript
+  _compiled: true;
+}
 
-  export interface Transformer {
-    registerFn(name: string, fn: (...args: any[]) => any): void;
-    unregisterFn(name: string): void;
-    transform(
-      input: any,
-      compiled: TemplateSpec,
-      opts?: TransformOptions
-    ): Promise<any>;
-  }
+export interface Transformer {
+  registerFn(name: string, fn: (...args: any[]) => any): void;
+  unregisterFn(name: string): void;
+  transform(
+    input: any,
+    compiled: CompiledTemplate | object,
+    opts?: TransformOptions
+  ): Promise<any>;
+}
 
-  export function createTransformer(options?: TransformOptions): Transformer;
-  export function compileTemplate(spec: TemplateSpec): TemplateSpec;
-  export interface ParsedSelectorToken {
-    type: "prop" | "index" | "wildcard";
-    key?: string;
-    index?: number;
-  }
-
-  export interface ParsedExprNode {
-    type: "number" | "string" | "selector" | "identifier" | "call" | "pipe";
-    value?: any;
-    name?: string;
-    args?: ParsedExprNode[];
-    steps?: ParsedExprNode[];
-  }
-
-  export interface RuntimeContext {
-    mode: "permissive" | "strict";
-    registerFn(name: string, fn: (...args: any[]) => any): void;
-    unregisterFn(name: string): void;
-    getFn(name: string): any;
-    evaluateExprString(expr: string, node: any, root: any): any;
-  }
-
-  export interface Template {
+export interface TemplateSpec {
+  templates?: Array<{
     name?: string;
     match?: string;
     output: any;
-  }
+  }>;
+  root: any;
 }
+
+export interface ExpressionNode {
+  expr: string;
+}
+
+export interface ApplyNode {
+  apply: string;
+  from?: string;
+}
+
+// Main API
+export function createTransformer(options?: {
+  mode?: "permissive" | "strict";
+}): Transformer;
+export function compileTemplate(spec: TemplateSpec): CompiledTemplate;
+export function transform(
+  input: any,
+  templateSpec: TemplateSpec | CompiledTemplate,
+  opts?: TransformOptions
+): Promise<any>;
+
+// Built-in functions
+export const builtins: {
+  concat: (...args: any[]) => string;
+  join: (arr: any[], sep?: string) => string;
+  uppercase: (s: string) => string;
+  lowercase: (s: string) => string;
+  default: (v: any, d: any) => any;
+  coalesce: (...args: any[]) => any;
+  length: (v: any) => number;
+  formatDate: (value: any, format?: string) => string | null;
+};

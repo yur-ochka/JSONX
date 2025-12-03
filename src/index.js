@@ -1,16 +1,18 @@
-// Public API export layer for JSONX
+// src/index.js - Main entry point
 
 import { transform } from "./core/engine/transform.js";
 import { createRuntimeContext } from "./core/engine/runtimeContext.js";
 import { builtins } from "./core/expressions/builtins.js";
-
 import { validateSchema } from "./core/validation/schemaValidator.js";
 import { templateSpecSchema } from "./core/validation/templateSchema.js";
+import { TemplateMatcher } from "./core/matching/templateMatcher.js";
 
 export function compileTemplate(spec) {
-  if (!spec || typeof spec !== "object")
+  if (!spec || typeof spec !== "object") {
     throw new Error("Invalid template spec");
+  }
 
+  // Validate against schema
   const result = validateSchema(templateSpecSchema, spec, { mode: "strict" });
 
   if (!result.valid) {
@@ -18,26 +20,51 @@ export function compileTemplate(spec) {
     throw new Error("Template spec validation failed: " + msg);
   }
 
-  return spec;
+  // Compile and enhance with template matcher
+  const compiled = {
+    ...spec,
+    _compiled: true,
+    _matcher: new TemplateMatcher(spec.templates || []),
+  };
+
+  return compiled;
 }
 
 export function createTransformer(options = {}) {
+  // Store the builtins separately
+  const transformerBuiltins = { ...builtins, ...options.builtins };
+
   const ctx = createRuntimeContext({
-    builtins,
+    builtins: transformerBuiltins,
     mode: options.mode || "permissive",
   });
 
   return {
-    registerFn: ctx.registerFn,
-    unregisterFn: ctx.unregisterFn,
+    registerFn: (name, fn) => ctx.registerFn(name, fn),
+    unregisterFn: (name) => ctx.unregisterFn(name),
 
     async transform(input, compiledTemplate, opts = {}) {
+      console.log(
+        "[transformer.transform] Builtins being passed:",
+        Object.keys(transformerBuiltins)
+      );
+
+      // Ensure builtins are passed to the transform function
       return transform(input, compiledTemplate, {
         ...opts,
+        builtins: { ...transformerBuiltins, ...opts.builtins },
         mode: opts.mode || ctx.mode,
       });
     },
   };
 }
 
+// Convenience function for simple transforms
+export async function transformDirect(input, templateSpec, opts = {}) {
+  const transformer = createTransformer(opts);
+  const compiled = compileTemplate(templateSpec);
+  return transformer.transform(input, compiled, opts);
+}
+
+// Export everything
 export { transform, builtins };

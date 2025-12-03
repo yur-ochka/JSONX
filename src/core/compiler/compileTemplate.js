@@ -1,6 +1,6 @@
 // compileTemplate(spec) -> CompiledTemplate
 
-const { validateTemplate } = require("./validateTemplate");
+const { validateTemplate } = require("../validation/validateTemplate");
 const path = require("path");
 
 function parseSelector(sel) {

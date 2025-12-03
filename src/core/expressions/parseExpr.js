@@ -1,8 +1,9 @@
-// Parses function calls, pipes, literals, selectors
+// src/core/expressions/parseExpr.js - Enhanced with pipes and better parsing
 
 export function parseExpr(expr) {
   expr = expr.trim();
 
+  // Handle pipes (| operator)
   if (expr.includes("|")) {
     const parts = expr.split("|").map((p) => p.trim());
     return {
@@ -11,6 +12,7 @@ export function parseExpr(expr) {
     };
   }
 
+  // Handle function calls
   const fnMatch = expr.match(/^([A-Za-z_$][A-Za-z0-9_$]*)\((.*)\)$/s);
   if (fnMatch) {
     const name = fnMatch[1];
@@ -22,56 +24,80 @@ export function parseExpr(expr) {
     };
   }
 
+  // Handle selector expressions
   if (expr.startsWith("$.")) {
     return { type: "selector", value: expr };
   }
 
+  // Handle string literals
   if (/^(['"]).*\1$/.test(expr)) {
     return { type: "string", value: expr.slice(1, -1) };
   }
 
-  if (!Number.isNaN(Number(expr))) {
+  // Handle number literals
+  if (!Number.isNaN(Number(expr)) && expr.trim() !== "") {
     return { type: "number", value: Number(expr) };
   }
 
+  // Handle boolean and null literals
+  if (expr === "true") return { type: "boolean", value: true };
+  if (expr === "false") return { type: "boolean", value: false };
+  if (expr === "null") return { type: "null", value: null };
+
+  // Default to identifier (for context variables)
   return { type: "identifier", value: expr };
 }
 
+// In splitArgs function, fix quote handling:
 function splitArgs(s) {
-  if (!s) return [];
-  const out = [];
-  let cur = "";
+  if (!s.trim()) return [];
+  const args = [];
+  let current = "";
   let depth = 0;
-  let inStr = false;
-  let quote = "";
+  let inString = false;
+  let quoteChar = "";
 
   for (let i = 0; i < s.length; i++) {
     const ch = s[i];
-    if (inStr) {
-      cur += ch;
-      if (ch === quote && s[i - 1] !== "\\") {
-        inStr = false;
+
+    // Handle string escaping
+    if (inString) {
+      if (ch === "\\" && i + 1 < s.length) {
+        current += s[++i]; // Add escaped char
+      } else if (ch === quoteChar) {
+        inString = false;
+        current += ch;
+      } else {
+        current += ch;
       }
       continue;
     }
+
+    // Start of string
     if (ch === '"' || ch === "'") {
-      inStr = true;
-      quote = ch;
-      cur += ch;
+      inString = true;
+      quoteChar = ch;
+      current += ch;
       continue;
     }
+
+    // Handle parentheses for nested calls
     if (ch === "(") depth++;
     if (ch === ")") depth--;
 
+    // Split on comma only when not in nested structures
     if (ch === "," && depth === 0) {
-      out.push(cur.trim());
-      cur = "";
+      args.push(current.trim());
+      current = "";
       continue;
     }
 
-    cur += ch;
+    current += ch;
   }
 
-  if (cur.trim()) out.push(cur.trim());
-  return out;
+  if (current.trim()) {
+    args.push(current.trim());
+  }
+
+  return args;
 }

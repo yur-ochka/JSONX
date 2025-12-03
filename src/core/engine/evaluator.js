@@ -1,6 +1,5 @@
 import { parseSelector } from "../selector/parseSelector.js";
 import { evalSelector } from "../selector/evalSelector.js";
-
 import { parseExpr } from "../expressions/parseExpr.js";
 import { evalExpr } from "../expressions/evalExpr.js";
 
@@ -10,7 +9,7 @@ export async function evaluate(node, ctx, currentNode, root, templatesMap) {
   }
 
   if (typeof node === "string") {
-    if (node.startsWith("$.")) return safeSelect(node, root, ctx);
+    if (node.startsWith("$.")) return safeSelect(node, currentNode, ctx); // FIXED: use currentNode
     return node;
   }
 
@@ -27,7 +26,7 @@ export async function evaluate(node, ctx, currentNode, root, templatesMap) {
 
     if (typeof node.apply === "string") {
       const from = node.from || "$.";
-      const sourceVal = safeSelect(from, root, ctx);
+      const sourceVal = safeSelect(from, root, ctx); // from uses root
 
       const template = templatesMap[node.apply];
       if (!template) {
@@ -69,10 +68,10 @@ export async function evaluate(node, ctx, currentNode, root, templatesMap) {
   return null;
 }
 
-function safeSelect(selector, root, ctx) {
+function safeSelect(selector, context, ctx) {
   try {
     const tokens = parseSelector(selector);
-    return evalSelector(root, tokens);
+    return evalSelector(context, tokens);
   } catch (e) {
     if (ctx.mode === "strict") throw e;
     return null;

@@ -1,4 +1,4 @@
-// Main transform entrypoint: accepts a template spec (the "compiled" template) and input JSON
+// src/core/engine/transform.js - Updated with template matching
 
 import { createRuntimeContext } from "./runtimeContext.js";
 import { applyTemplate } from "./applyTemplate.js";
@@ -7,23 +7,15 @@ export async function transform(input, templateSpec, opts = {}) {
   if (!templateSpec || typeof templateSpec !== "object")
     throw new Error("Invalid template specification");
 
+  console.log(
+    "[transform] Received opts.builtins:",
+    opts.builtins ? Object.keys(opts.builtins) : "none"
+  );
+
   const ctx = createRuntimeContext(
     Object.assign(
       {
-        builtins: {
-          concat: (...parts) =>
-            parts.map((p) => (p == null ? "" : String(p))).join(""),
-          default: (v, d) => (v == null ? d : v),
-          coalesce: (...args) => args.find((a) => a != null),
-          length: (v) =>
-            v == null
-              ? 0
-              : Array.isArray(v) || typeof v === "string"
-              ? v.length
-              : Object.keys(v).length,
-          uppercase: (s) => (s == null ? s : String(s).toUpperCase()),
-          lowercase: (s) => (s == null ? s : String(s).toLowerCase()),
-        },
+        builtins: opts.builtins || {}, // This should now have concat, etc.
         mode: opts.mode || "permissive",
       },
       opts
@@ -33,26 +25,40 @@ export async function transform(input, templateSpec, opts = {}) {
   const templates = templateSpec.templates || [];
   const templatesMap = {};
   for (const t of templates) {
-    if (!t.name) continue; // unnamed templates ignored for now
+    if (!t.name) continue;
     templatesMap[t.name] = t;
   }
 
+  // Check for root template
   if (templateSpec.root) {
     const { evaluate } = await import("./evaluator.js");
     return evaluate(templateSpec.root, ctx, input, input, templatesMap);
   }
 
+  // Check for start template option
   if (opts.start) {
     const t = templatesMap[opts.start];
     if (!t) throw new Error(`Unknown start template: ${opts.start}`);
     return applyTemplate(t, input, ctx, input, templatesMap);
   }
 
+  // Check for auto-matching if no specific template is specified
+  if (templateSpec._matcher) {
+    const matching = templateSpec._matcher.findMatchingTemplates(input, input);
+    if (matching.length > 0) {
+      // Apply first matching template
+      return applyTemplate(matching[0], input, ctx, input, templatesMap);
+    }
+  }
+
+  // Fallback to root template
   if (templatesMap.root) {
     return applyTemplate(templatesMap.root, input, ctx, input, templatesMap);
   }
 
-  if (ctx.mode === "strict")
-    throw new Error("No root or start template specified");
+  if (ctx.mode === "strict") {
+    throw new Error("No root, start, or matching template found");
+  }
+
   return null;
 }
