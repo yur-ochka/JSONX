@@ -17,7 +17,7 @@ export async function evaluate(node, ctx, currentNode, root, templatesMap) {
     if (typeof node.expr === "string") {
       try {
         const ast = parseExpr(node.expr);
-        return evalExpr(ast, ctx, currentNode, root);
+        return await evalExpr(ast, ctx, currentNode, root);
       } catch (e) {
         if (ctx.mode === "strict") throw e;
         return null;
@@ -26,7 +26,7 @@ export async function evaluate(node, ctx, currentNode, root, templatesMap) {
 
     if (typeof node.apply === "string") {
       const from = node.from || "$.";
-      const sourceVal = safeSelect(from, root, ctx); // from uses root
+      const sourceVal = safeSelect(from, currentNode, ctx);
 
       const template = templatesMap[node.apply];
       if (!template) {
@@ -71,7 +71,7 @@ export async function evaluate(node, ctx, currentNode, root, templatesMap) {
 function safeSelect(selector, context, ctx) {
   try {
     const tokens = parseSelector(selector);
-    return evalSelector(context, tokens);
+    return evalSelector(context, tokens, ctx);
   } catch (e) {
     if (ctx.mode === "strict") throw e;
     return null;

@@ -15,7 +15,7 @@ export const builtins = {
   add: (a, b) => (a || 0) + (b || 0),
   subtract: (a, b) => (a || 0) - (b || 0),
   multiply: (a, b) => (a || 0) * (b || 0),
-  divide: (a, b) => (a || 0) / (b || 1),
+  divide: (a, b) => (a || 0) / (b || 0),
   round: (n, precision = 0) => {
     const factor = Math.pow(10, precision);
     return Math.round((n || 0) * factor) / factor;
@@ -28,6 +28,21 @@ export const builtins = {
   not: (v) => !v,
   and: (...args) => args.every(Boolean),
   or: (...args) => args.some(Boolean),
+
+  // Comparison functions
+  greaterThan: (a, b) => a > b,
+  lessThan: (a, b) => a < b,
+  greaterThanOrEqual: (a, b) => a >= b,
+  lessThanOrEqual: (a, b) => a <= b,
+
+  max: (...args) => {
+    const numbers = args.filter((a) => a != null && typeof a === "number");
+    return numbers.length > 0 ? Math.max(...numbers) : 0;
+  },
+  min: (...args) => {
+    const numbers = args.filter((a) => a != null && typeof a === "number");
+    return numbers.length > 0 ? Math.min(...numbers) : 0;
+  },
 
   // Array functions
   length: (v) => {

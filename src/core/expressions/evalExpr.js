@@ -1,122 +1,151 @@
 import { parseSelector } from "../selector/parseSelector.js";
 import { evalSelector } from "../selector/evalSelector.js";
 
-export function evalExpr(ast, ctx, currentNode, root) {
-  console.log("🔍 evalExpr AST:", ast.type, ast);
+// Make the function async
+export async function evalExpr(ast, ctx, currentNode, root) {
 
   switch (ast.type) {
     case "number":
-    case "string":
-    case "boolean":
-    case "null":
       return ast.value;
+
+    case "string":
+      return ast.value;
+
+    case "boolean":
+      return ast.value;
+
+    case "null":
+      return null;
 
     case "selector": {
       try {
-        console.log(
-          "🔍 Evaluating selector:",
-          ast.value,
-          "against:",
-          currentNode
-        );
         const tokens = parseSelector(ast.value);
-        const result = evalSelector(currentNode, tokens);
-        console.log("🔍 Selector result:", result);
+        const result = evalSelector(currentNode, tokens, ctx);
         return result;
-      } catch (e) {
-        console.error("❌ Selector error:", e.message);
-        if (ctx.mode === "strict") throw e;
+      } catch (error) {
+        if (ctx.mode === "strict") throw error;
         return null;
       }
     }
 
     case "identifier": {
-      // Check if it's a function in the context
-      if (ctx.getFn) {
+      if (ctx && typeof ctx.getFn === "function") {
         const fn = ctx.getFn(ast.value);
         if (fn) {
-          console.log("🔍 Found function:", ast.value, fn);
           return fn;
         }
       }
-      console.warn("⚠️ Identifier not found:", ast.value);
       return null;
     }
 
     case "call": {
-      console.log("🔍 Function call:", ast.name, "with args:", ast.args);
+
+      // Get the function
       const fn = ctx.getFn ? ctx.getFn(ast.name) : null;
       if (!fn) {
-        console.error("❌ Function not found:", ast.name);
-        if (ctx.mode === "strict")
+        if (ctx.mode === "strict") {
           throw new Error(`Unknown function: ${ast.name}`);
+        }
         return null;
       }
 
-      // Evaluate all arguments
-      const args = ast.args.map((arg) => {
-        const result = evalExpr(arg, ctx, currentNode, root);
-        console.log("🔍 Arg evaluated:", arg, "->", result);
-        return result;
-      });
+      // Evaluate all arguments 
+      const evaluatedArgs = [];
+      for (const arg of ast.args) {
+        evaluatedArgs.push(await evalExpr(arg, ctx, currentNode, root));
+      }
 
-      console.log("🔍 Calling function:", ast.name, "with args:", args);
       try {
-        const result = fn(...args);
-        console.log("🔍 Function result:", result);
+        const result = fn(...evaluatedArgs);
+
+        if (result && typeof result.then === "function") {
+          return await result;
+        }
+
         return result;
-      } catch (e) {
-        console.error("❌ Function execution error:", e);
-        if (ctx.mode === "strict") throw e;
+      } catch (error) {
+        if (ctx.mode === "strict") throw error;
         return null;
       }
     }
 
     case "pipe": {
-      console.log("🔍 Pipe expression with steps:", ast.steps.length);
       if (ast.steps.length === 0) return null;
 
       // Evaluate first step
-      let val = evalExpr(ast.steps[0], ctx, currentNode, root);
-      console.log("🔍 Pipe initial value:", val);
+      let value = await evalExpr(ast.steps[0], ctx, currentNode, root);
 
-      // Apply remaining steps as functions
+      // Apply remaining steps
       for (let i = 1; i < ast.steps.length; i++) {
         const step = ast.steps[i];
 
-        // For pipe steps, we expect them to be identifiers (function names)
         if (step.type === "identifier") {
           const fn = ctx.getFn ? ctx.getFn(step.value) : null;
           if (!fn) {
-            console.error("❌ Pipe function not found:", step.value);
-            if (ctx.mode === "strict")
-              throw new Error(`Pipe step is not a function: ${step.value}`);
+            if (ctx.mode === "strict") {
+              throw new Error(`Unknown pipe function: ${step.value}`);
+            }
             return null;
           }
-          console.log("🔍 Applying pipe function:", step.value, "to:", val);
+
           try {
-            val = fn(val);
-            console.log("🔍 Pipe result:", val);
-          } catch (e) {
-            console.error("❌ Pipe function error:", e);
-            if (ctx.mode === "strict") throw e;
+            const result = fn(value);
+            // Handle async functions
+            value =
+              result && typeof result.then === "function"
+                ? await result
+                : result;
+          } catch (error) {
+            if (ctx.mode === "strict") throw error;
+            return null;
+          }
+        } else if (step.type === "call") {
+          // Function call with arguments
+          const fn = ctx.getFn ? ctx.getFn(step.name) : null;
+          if (!fn) {
+            if (ctx.mode === "strict") {
+              throw new Error(`Unknown pipe function: ${step.name}`);
+            }
+            return null;
+          }
+
+          // Evaluate all arguments first
+          const evaluatedArgs = [];
+          for (const arg of step.args) {
+            evaluatedArgs.push(await evalExpr(arg, ctx, currentNode, root));
+          }
+
+          // The piped value becomes the FIRST argument
+          const allArgs = [value, ...evaluatedArgs];
+
+          try {
+            const result = fn(...allArgs);
+            // Handle async functions
+            value =
+              result && typeof result.then === "function"
+                ? await result
+                : result;
+          } catch (error) {
+            if (ctx.mode === "strict") throw error;
             return null;
           }
         } else {
-          console.error("❌ Invalid pipe step type:", step.type);
-          if (ctx.mode === "strict")
-            throw new Error("Pipe step must be a function identifier");
+          if (ctx.mode === "strict") {
+            throw new Error(
+              `Pipe step must be identifier or call, got ${step.type}`
+            );
+          }
           return null;
         }
       }
 
-      return val;
+      return value;
     }
 
     default:
-      console.error("❌ Unknown AST type:", ast.type);
-      if (ctx.mode === "strict")
-        throw new Error(`Unknown AST node type: ${ast.type}`);
+      if (ctx.mode === "strict") {
+        throw new Error(`Unknown AST type: ${ast.type}`);
+      }
       return null;
   }
 }

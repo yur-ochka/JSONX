@@ -5,15 +5,10 @@ export async function transform(input, templateSpec, opts = {}) {
   if (!templateSpec || typeof templateSpec !== "object")
     throw new Error("Invalid template specification");
 
-  console.log(
-    "[transform] Received opts.builtins:",
-    opts.builtins ? Object.keys(opts.builtins) : "none"
-  );
-
   const ctx = createRuntimeContext(
     Object.assign(
       {
-        builtins: opts.builtins || {}, // This should now have concat, etc.
+        builtins: opts.builtins || {},
         mode: opts.mode || "permissive",
       },
       opts

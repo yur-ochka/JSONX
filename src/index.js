@@ -1,5 +1,3 @@
-// src/index.js - Main entry point
-
 import { transform } from "./core/engine/transform.js";
 import { createRuntimeContext } from "./core/engine/runtimeContext.js";
 import { builtins } from "./core/expressions/builtins.js";
@@ -40,16 +38,17 @@ export function createTransformer(options = {}) {
   });
 
   return {
-    registerFn: (name, fn) => ctx.registerFn(name, fn),
-    unregisterFn: (name) => ctx.unregisterFn(name),
+    registerFn: (name, fn) => {
+      transformerBuiltins[name] = fn;
+      ctx.registerFn(name, fn);
+    },
+
+    unregisterFn: (name) => {
+      delete transformerBuiltins[name];
+      ctx.unregisterFn(name);
+    },
 
     async transform(input, compiledTemplate, opts = {}) {
-      console.log(
-        "[transformer.transform] Builtins being passed:",
-        Object.keys(transformerBuiltins)
-      );
-
-      // Ensure builtins are passed to the transform function
       return transform(input, compiledTemplate, {
         ...opts,
         builtins: { ...transformerBuiltins, ...opts.builtins },

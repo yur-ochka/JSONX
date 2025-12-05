@@ -1,6 +1,8 @@
 // compileTemplate(spec) -> CompiledTemplate
 
 const { validateTemplate } = require("../validation/validateTemplate");
+const { parseExpr } = require("../expressions/parseExpr");
+
 const path = require("path");
 
 function parseSelector(sel) {
@@ -90,8 +92,22 @@ function walkAndCompileOutputs(node) {
   }
 
   if (t === "object") {
-    if (node.hasOwnProperty("expr") && typeof node.expr === "string") {
-      return { _kind: "expr", expr: node.expr };
+    if (
+      node &&
+      node.hasOwnProperty &&
+      node.hasOwnProperty("expr") &&
+      typeof node.expr === "string"
+    ) {
+      try {
+        const ast = parseExpr(node.expr);
+        return { _kind: "expr", expr: node.expr, ast };
+      } catch (err) {
+        throw new Error(
+          `Invalid expression syntax "${node.expr}": ${
+            err && err.message ? err.message : err
+          }`
+        );
+      }
     }
     if (node.hasOwnProperty("apply") && typeof node.apply === "string") {
       const out = { _kind: "apply", apply: node.apply };
