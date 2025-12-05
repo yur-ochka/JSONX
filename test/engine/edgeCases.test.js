@@ -1,5 +1,4 @@
 import { createTransformer, compileTemplate } from "../../src/index.js";
-import { compileTemplate as compileTemplateRaw } from "../../src/core/compiler/compileTemplate.js";
 
 describe("Edge Cases and Error Tests", () => {
   describe("Invalid Templates", () => {

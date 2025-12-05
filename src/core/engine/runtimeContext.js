@@ -1,6 +1,52 @@
+// runtimeContext.js (updated)
 // Execution context for transformation: registered functions and mode ('permissive' | 'strict')
 import { parseSelector } from "../selector/parseSelector.js";
 import { evalSelector } from "../selector/evalSelector.js";
+
+// Helper function to parse function arguments
+function parseArgs(argsStr) {
+  const args = [];
+  let current = "";
+  let depth = 0;
+  let inString = false;
+  let quoteChar = "";
+
+  for (let i = 0; i < argsStr.length; i++) {
+    const char = argsStr[i];
+    const prevChar = i > 0 ? argsStr[i - 1] : "";
+
+    // Handle string literals
+    if ((char === "'" || char === '"') && prevChar !== "\\") {
+      if (!inString) {
+        inString = true;
+        quoteChar = char;
+      } else if (char === quoteChar) {
+        inString = false;
+      }
+    }
+
+    // Handle parentheses depth
+    if (!inString) {
+      if (char === "(") depth++;
+      if (char === ")") depth--;
+    }
+
+    // Split on comma when not inside string or nested parentheses
+    if (char === "," && depth === 0 && !inString) {
+      args.push(current);
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+
+  // Add the last argument
+  if (current.trim() !== "") {
+    args.push(current);
+  }
+
+  return args;
+}
 
 export function createRuntimeContext(opts = {}) {
   const functions = Object.assign({}, opts.builtins || {});
