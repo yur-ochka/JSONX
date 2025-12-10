@@ -1,5 +1,3 @@
-// src/core/validation/templateSchema.js
-
 export const templateSpecSchema = {
   $schema: "http://json-schema.org/draft-07/schema#",
   title: "JSONX Template Schema",

@@ -1,4 +1,3 @@
-// runtimeContext.js (updated)
 // Execution context for transformation: registered functions and mode ('permissive' | 'strict')
 import { parseSelector } from "../selector/parseSelector.js";
 import { evalSelector } from "../selector/evalSelector.js";

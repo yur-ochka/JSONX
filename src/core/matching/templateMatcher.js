@@ -1,5 +1,3 @@
-// src/core/matching/templateMatcher.js
-
 import { parseSelector } from "../selector/parseSelector.js";
 import { evalSelector } from "../selector/evalSelector.js";
 
