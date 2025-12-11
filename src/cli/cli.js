@@ -1,4 +1,4 @@
-// src/cli/cli.js
+#!/usr/bin/env node
 
 import fs from "fs";
 import path from "path";
@@ -154,18 +154,33 @@ function parseArgs() {
       case "validate":
       case "compile":
       case "debug":
-        result.command = arg;
+        if (!result.command) {
+          result.command = arg;
+        } else {
+          throw new Error(
+            `Multiple commands specified: ${result.command} and ${arg}`
+          );
+        }
         break;
       case "--template":
       case "-t":
+        if (i + 1 >= args.length) {
+          throw new Error(`Missing value for option: ${arg}`);
+        }
         result.template = args[++i];
         break;
       case "--input":
       case "-i":
+        if (i + 1 >= args.length) {
+          throw new Error(`Missing value for option: ${arg}`);
+        }
         result.input = args[++i];
         break;
       case "--output":
       case "-o":
+        if (i + 1 >= args.length) {
+          throw new Error(`Missing value for option: ${arg}`);
+        }
         result.output = args[++i];
         break;
       case "--strict":
@@ -176,8 +191,12 @@ function parseArgs() {
         result.help = true;
         break;
       default:
-        if (!arg.startsWith("-")) {
+        if (arg.startsWith("-")) {
+          throw new Error(`Unknown option: ${arg}`);
+        } else if (!result.command) {
           result.command = arg;
+        } else {
+          throw new Error(`Unexpected argument: ${arg}`);
         }
     }
 
