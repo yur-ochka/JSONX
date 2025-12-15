@@ -51,6 +51,9 @@ export function createRuntimeContext(opts = {}) {
   const functions = Object.assign({}, opts.builtins || {});
   const mode = opts.mode || "permissive";
 
+  const MAX_DEPTH = 50;
+  let currentDepth = 0;
+
   return {
     mode,
     registerFn(name, fn) {
@@ -64,6 +67,21 @@ export function createRuntimeContext(opts = {}) {
     getFn(name) {
       return functions[name];
     },
+
+    incrementDepth() {
+      currentDepth++;
+      if (currentDepth > MAX_DEPTH) {
+        throw new Error(
+          `Recursion limit exceeded (${MAX_DEPTH}). Check for template loops.`
+        );
+      }
+      return currentDepth;
+    },
+    decrementDepth() {
+      currentDepth = Math.max(0, currentDepth - 1);
+      return currentDepth;
+    },
+
     evaluateExprString(expr, currentNode, root) {
       expr = String(expr).trim();
 

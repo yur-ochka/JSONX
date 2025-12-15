@@ -3,11 +3,13 @@ export function parseExpr(expr) {
 
   // Handle pipes (| operator)
   if (expr.includes("|")) {
-    const parts = expr.split("|").map((p) => p.trim());
-    return {
-      type: "pipe",
-      steps: parts.map(parseExpr),
-    };
+    const parts = safeSplitPipe(expr);
+    if (parts.length > 1) {
+      return {
+        type: "pipe",
+        steps: parts.map(parseExpr),
+      };
+    }
   }
 
   // Handle function calls
@@ -98,4 +100,48 @@ function splitArgs(s) {
   }
 
   return args;
+}
+
+function safeSplitPipe(s) {
+  const parts = [];
+  let current = "";
+  let inString = false;
+  let quoteChar = "";
+
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+
+    if (inString) {
+      if (ch === "\\" && i + 1 < s.length) {
+        current += s[++i];
+      } else if (ch === quoteChar) {
+        inString = false;
+        current += ch;
+      } else {
+        current += ch;
+      }
+      continue;
+    }
+
+    if (ch === '"' || ch === "'") {
+      inString = true;
+      quoteChar = ch;
+      current += ch;
+      continue;
+    }
+
+    if (ch === "|") {
+      parts.push(current.trim());
+      current = "";
+      continue;
+    }
+
+    current += ch;
+  }
+
+  if (current.trim() || parts.length > 0) {
+    parts.push(current.trim());
+  }
+
+  return parts.filter((p) => p.length > 0);
 }

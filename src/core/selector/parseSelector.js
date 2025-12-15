@@ -3,8 +3,15 @@
 export function parseSelector(selector) {
   if (typeof selector !== "string")
     throw new Error("Selector must be a string");
+
+  if (selector === "$") {
+    return [];
+  }
+
   if (!selector.startsWith("$."))
-    throw new Error(`Invalid selector: ${selector}`);
+    throw new Error(
+      `Invalid selector: ${selector}. Must be '$' or start with '$.'`
+    );
 
   const tokens = [];
   let i = 1; // skip $
@@ -18,6 +25,11 @@ export function parseSelector(selector) {
       while (i < selector.length && /[A-Za-z0-9_$]/.test(selector[i])) {
         name += selector[i++];
       }
+
+      if (!name && i === selector.length && tokens.length === 0) {
+        return [];
+      }
+
       if (!name) throw new Error(`Invalid property name at position ${i}`);
       tokens.push({ type: "prop", key: name });
       continue;

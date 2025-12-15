@@ -37,16 +37,22 @@ export async function evaluate(node, ctx, currentNode, root, templatesMap) {
 
       const { applyTemplate } = await import("./applyTemplate.js");
 
-      if (Array.isArray(sourceVal)) {
-        const arr = [];
-        for (const item of sourceVal) {
-          arr.push(
-            await applyTemplate(template, item, ctx, root, templatesMap)
-          );
+      try {
+        ctx.incrementDepth();
+
+        if (Array.isArray(sourceVal)) {
+          const arr = [];
+          for (const item of sourceVal) {
+            arr.push(
+              await applyTemplate(template, item, ctx, root, templatesMap)
+            );
+          }
+          return arr;
+        } else {
+          return applyTemplate(template, sourceVal, ctx, root, templatesMap);
         }
-        return arr;
-      } else {
-        return applyTemplate(template, sourceVal, ctx, root, templatesMap);
+      } finally {
+        ctx.decrementDepth();
       }
     }
 

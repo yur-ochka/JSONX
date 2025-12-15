@@ -3,7 +3,7 @@ import { createRuntimeContext } from "./core/engine/runtimeContext.js";
 import { builtins } from "./core/expressions/builtins.js";
 import { validateSchema } from "./core/validation/schemaValidator.js";
 import { templateSpecSchema } from "./core/validation/templateSchema.js";
-import { TemplateMatcher } from "./core/matching/templateMatcher.js";
+//import { TemplateMatcher } from "./core/matching/templateMatcher.js";
 
 export function compileTemplate(spec) {
   if (!spec || typeof spec !== "object") {
@@ -22,7 +22,7 @@ export function compileTemplate(spec) {
   const compiled = {
     ...spec,
     _compiled: true,
-    _matcher: new TemplateMatcher(spec.templates || []),
+    //_matcher: new TemplateMatcher(spec.templates || []),
   };
 
   return compiled;

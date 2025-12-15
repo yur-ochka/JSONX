@@ -1,5 +1,3 @@
-// Complete built-in functions
-
 export const builtins = {
   // String functions
   concat: (...args) => args.map((v) => (v == null ? "" : String(v))).join(""),
@@ -8,8 +6,18 @@ export const builtins = {
   uppercase: (s) => (s == null ? s : String(s).toUpperCase()),
   lowercase: (s) => (s == null ? s : String(s).toLowerCase()),
   trim: (s) => (s == null ? s : String(s).trim()),
-  substring: (s, start, length) =>
-    s == null ? s : String(s).substring(start, length),
+  substring: (s, start, length) => {
+    if (s == null) return s;
+    s = String(s);
+    start = Number(start) || 0;
+
+    if (length == null) {
+      return s.slice(start);
+    }
+
+    const end = start + (Number(length) || 0);
+    return s.slice(start, end);
+  },
 
   // Math functions
   add: (a, b) => (a || 0) + (b || 0),
@@ -37,11 +45,11 @@ export const builtins = {
 
   max: (...args) => {
     const numbers = args.filter((a) => a != null && typeof a === "number");
-    return numbers.length > 0 ? Math.max(...numbers) : 0;
+    return numbers.length > 0 ? Math.max(...numbers) : null;
   },
   min: (...args) => {
     const numbers = args.filter((a) => a != null && typeof a === "number");
-    return numbers.length > 0 ? Math.min(...numbers) : 0;
+    return numbers.length > 0 ? Math.min(...numbers) : null;
   },
 
   // Array functions
@@ -65,12 +73,12 @@ export const builtins = {
     const pad = (n) => n.toString().padStart(2, "0");
 
     return fmt
-      .replace("YYYY", d.getFullYear())
-      .replace("MM", pad(d.getMonth() + 1))
-      .replace("DD", pad(d.getDate()))
-      .replace("hh", pad(d.getHours()))
-      .replace("mm", pad(d.getMinutes()))
-      .replace("ss", pad(d.getSeconds()));
+      .replace("YYYY", d.getUTCFullYear())
+      .replace("MM", pad(d.getUTCMonth() + 1))
+      .replace("DD", pad(d.getUTCDate()))
+      .replace("hh", pad(d.getUTCHours()))
+      .replace("mm", pad(d.getUTCMinutes()))
+      .replace("ss", pad(d.getUTCSeconds()));
   },
   now: () => new Date().toISOString(),
 

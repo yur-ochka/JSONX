@@ -35,15 +35,6 @@ export async function transform(input, templateSpec, opts = {}) {
     return applyTemplate(t, input, ctx, input, templatesMap);
   }
 
-  // Check for auto-matching if no specific template is specified
-  if (templateSpec._matcher) {
-    const matching = templateSpec._matcher.findMatchingTemplates(input, input);
-    if (matching.length > 0) {
-      // Apply first matching template
-      return applyTemplate(matching[0], input, ctx, input, templatesMap);
-    }
-  }
-
   // Fallback to root template
   if (templatesMap.root) {
     return applyTemplate(templatesMap.root, input, ctx, input, templatesMap);
